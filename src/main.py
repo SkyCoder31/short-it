@@ -17,9 +17,16 @@ redis_client = redis.Redis.from_url(settings.redis_url, decode_responses=True)
 
 app = FastAPI(title="URL Shortener API")
 
-@app.get("/target")
-def target_page():
-    return {"message": "You reached the target!"}
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the URL Shortener API",
+            "actions": "visit /docs for Swagger UI to explore the API and create short URLs.",
+            "note": "This service includes rate limiting: Maximum 5 URL creation requests per minute per IP.",
+            "short_example": "Create a short URL for 'https://www.example.com' by sending a POST request to /url with JSON body {'target_url': 'https://www.example.com'}",
+            "admin_example": "Access URL analytics by visiting /admin/{secret_key} where {secret_key} is provided in the response when you create a short URL.",
+            "qr_example": "Generate a QR code for a short URL by visiting /{url_key}/qr where {url_key} is the key of your short URL.",
+            "redirect_example": "Access the original URL by visiting /{url_key} where {url_key} is the key of your short URL.",
+    }
 
 @app.post("/url", response_model=schemas.URLInfo)
 def create_url(url: schemas.URLCreate, request: Request, db: Session = Depends(get_db)):
