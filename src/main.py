@@ -9,9 +9,11 @@ from src import models, schemas, keygen
 from src.services import analytics
 from fastapi.responses import StreamingResponse
 import redis
+from src.config import get_settings
 
+settings = get_settings()
 models.Base.metadata.create_all(bind=engine)
-redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+redis_client = redis.Redis.from_url(settings.redis_url, decode_responses=True)
 
 app = FastAPI(title="URL Shortener API")
 
