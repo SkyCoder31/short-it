@@ -142,4 +142,4 @@ We benchmarked the system using **Locust** to simulate high-concurrency traffic.
 ## 🔗 Live Demo
 
 Access the production API docs here:  
-**[https://url-shortener-production.up.railway.app/docs](https://url-shortener-production.up.railway.app/docs)**
+**[https://short-it-production.up.railway.app/docs](https://short-it-production.up.railway.app/docs)**
