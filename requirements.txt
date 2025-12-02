@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+pydantic-settings
+redis
+qrcode[pil]
+# requests (needed for locust, but optional for prod)
