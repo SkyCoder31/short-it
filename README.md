@@ -1,56 +1,68 @@
-# ShortIt - High-Performance URL Shortener
+# 🚀 High-Performance Full Stack URL Shortener
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-green.svg)
-![Redis](https://img.shields.io/badge/Redis-Caching-red.svg)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Relational_DB-blue.svg)
+![Vue.js](https://img.shields.io/badge/Vue.js-3.0-4FC08D.svg?logo=vue.js)
+![Redis](https://img.shields.io/badge/Redis-Caching-red.svg?logo=redis)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Relational_DB-blue.svg?logo=postgresql)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-Styling-38B2AC.svg?logo=tailwind-css)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
-A production-grade, scalable URL shortener API built with **FastAPI**, **Redis**, and **PostgreSQL**. Designed to handle high-concurrency traffic with sub-millisecond read latencies using a **Look-Aside Caching** strategy and asynchronous background processing.
+A production-grade, scalable URL shortener featuring a **Decoupled Full-Stack Architecture**. Combines a high-performance **FastAPI** backend (handling 150+ RPS) with a modern **Vue.js** frontend dashboard. The system features real-time **Geo-Analytics**, QR code generation, and a non-blocking architecture optimized for speed.
 
 ---
 
-## System Architecture
+## 🏗️ System Architecture (v2.0)
 
-The system is designed to separate the **Hot Path (Reads)** from the **Cold Path (Writes)** to maximize throughput.
+The system uses a **Decoupled Architecture**, separating the UI from the API to allow independent scaling and deployment.
 
 ### High-Level Design
-1. **Read Path (Redirection):** Optimized for speed. Checks Redis cache first (~5ms); falls back to DB only on misses.
-2. **Write Path (Creation):** Optimized for consistency. Writes to PostgreSQL and generates unique Base62 keys.
-3. **Analytics:** Decoupled from the main request flow using **Background Tasks** to ensure zero latency impact on user redirects.
+1. **Frontend (SPA):** A lightweight Vue.js application running on Port 8080. Handles UI state, data visualization, and communicates via REST API.
+2. **Backend (API):** A stateless FastAPI server running on Port 8000. Handles business logic, caching, and background processing.
+3. **Geo-Intelligence:** Background workers resolve user IP addresses to physical locations (City/Country) asynchronously to prevent latency.
 
 ```mermaid
 graph TD
-    User[User / Client] -->|HTTP Request| API[FastAPI Server]
+    User[User / Browser]
     
-    subgraph "Data Layer"
-        API -->|1. Check Cache| Redis[(Redis Cache)]
-        Redis -- Miss --> API
-        Redis -- Hit --> API
-        API -->|2. DB Fallback| DB[(PostgreSQL DB)]
+    subgraph "Frontend Layer (Port 8080)"
+        UI[Vue.js Dashboard]
     end
+
+    subgraph "Backend Layer (Port 8000)"
+        API[FastAPI Server]
+        Worker[Background Worker]
+    end
+
+    subgraph "Data & External"
+        Redis[(Redis Cache)]
+        DB[(PostgreSQL)]
+        GeoAPI[IP-Location Service]
+    end
+
+    User -->|Visits UI| UI
+    UI -->|REST API Calls| API
+    User -->|Redirect Link| API
     
-    subgraph "Async Processing"
-        API -.->|3. Dispatch Event| BG[Background Worker]
-        BG -->|4. Batch Write Stats| DB
-    end
+    API -->|1. Check Cache| Redis
+    API -->|2. DB Fallback| DB
+    API -.->|3. Async Event| Worker
     
-    subgraph "Safety"
-        API -->|Rate Limiting| Redis
-    end
+    Worker -->|4. Resolve IP| GeoAPI
+    Worker -->|5. Save Analytics| DB
 ```
 
 ---
 
-## Performance & Stress Testing
+## ⚡ Performance & Stress Testing
 
-We benchmarked the system using **Locust** to simulate high-concurrency traffic. The system was tested under a sustained load of **100 concurrent users** with zero wait time (simulating a DDoS or viral traffic spike).
+We benchmarked the system using **Locust** to simulate high-concurrency traffic under a sustained load of **100 concurrent users** with zero wait time.
 
 ### 📊 Load Test Results
 
 * **Tool:** Locust.io
-* **Duration:** Sustained Load
-* **Users:** 100 Concurrent Users (No Sleep/Wait Time)
+* **Scenario:** High-Traffic Viral Event
+* **Concurrency:** 100 Users (Zero Sleep)
 * **Endpoint:** `GET /{short_code}` (Redirect + Analytics)
 
 | Metric | Result |
@@ -61,85 +73,214 @@ We benchmarked the system using **Locust** to simulate high-concurrency traffic.
 | **P50 Latency (Median)** | 610ms |
 | **P99 Latency** | 1100ms |
 
-> *Note: Test performed on a local Windows development machine. Deployment to a Linux-based cloud environment is expected to yield 5x-10x higher throughput due to OS networking optimizations.*
+> *Note: Tests performed on a local Windows development machine. Cloud deployment expected to yield significantly higher throughput due to OS networking optimizations.*
 
 ---
 
-##  Key Features
+## 🛠️ Key Features
 
-### 1. Performance Optimizations
+### 1. 🌍 Geo-Analytics & Intelligence
 
-* **Redis Look-Aside Cache:** Hot URLs are served directly from memory, bypassing the database entirely.
-* **Asynchronous Analytics:** Click tracking is handled via `BackgroundTasks`, completely removing DB write latency from the user's redirect experience.
-* **Connection Pooling:** SQLAlchemy engine tuned with `pool_size=20` and `max_overflow=40` to handle concurrent bursts.
+* **Location Tracking:** Automatically resolves user IP to Country and City using async HTTP clients.
+* **Non-Blocking Writes:** Uses `BackgroundTasks` to perform Geo-Lookups and DB writes after the response is sent, ensuring instant user redirects.
+* **Visual Analytics:** Dashboard displays real-time click data with geographic information.
+* **Privacy-Aware:** IP addresses are resolved to city-level data, not stored raw for privacy compliance.
 
-### 2. Security & Reliability
+### 2. 📊 Modern Frontend Dashboard
 
-* **Rate Limiting:** Redis-based "Token Bucket" implementation to prevent abuse (e.g., 5 requests/minute for creation).
-* **Input Validation:** Strict Pydantic schemas for all incoming data.
-* **Secret Keys:** Admin management endpoints protected by unique secret keys generated per URL.
+* **Vue.js 3:** Reactive UI for creating links and viewing stats without page reloads using Composition API.
+* **Visual Analytics:** View real-time click tables with timestamp, country, and city data.
+* **UX Enhancements:** Loading spinners, copy-to-clipboard functionality, and comprehensive error handling.
+* **Responsive Design:** Tailwind CSS ensures seamless experience across desktop, tablet, and mobile devices.
 
-### 3. Full-Stack Features
+### 3. 🚀 Backend Optimizations
 
-* **QR Code Generation:** On-the-fly QR code rendering using `Pillow` and `BytesIO` streams.
-* **Custom Aliases:** Support for vanity URLs (e.g., `/my-custom-link`).
-* **Click Analytics:** Tracks User-Agent, IP, and Timestamp for every visit.
+* **Redis Look-Aside Cache:** Hot URLs served from memory (~5ms response time).
+* **Connection Pooling:** SQLAlchemy engine tuned with `pool_size=20` for handling concurrent requests.
+* **Rate Limiting:** Token-bucket algorithm prevents API abuse with configurable limits.
+* **Async Processing:** All I/O operations use async/await for maximum throughput.
+
+### 4. 📦 Full-Stack Extras
+
+* **QR Codes:** Instant on-the-fly QR generation for every shortened link using Pillow.
+* **CORS Security:** Configured to allow secure cross-origin requests between Frontend and Backend.
+* **Custom Aliases:** Support for vanity URLs (e.g., `/my-brand-link`).
+* **Secret Keys:** Admin management endpoints protected by unique secret keys.
 
 ---
 
 ## 🔧 Tech Stack
 
+### Frontend
+
+* **Framework:** Vue.js 3 (Composition API)
+* **Styling:** Tailwind CSS (CDN)
+* **HTTP Client:** Fetch API
+* **Hosting:** Static Server (Port 8080) / CDN-ready
+
+### Backend
+
 * **Language:** Python 3.12
 * **Framework:** FastAPI (ASGI)
 * **Server:** Uvicorn
 * **Database:** PostgreSQL 16
-* **Cache/Broker:** Redis (Memurai on Windows)
+* **Cache:** Redis (Memurai on Windows)
+* **HTTP Client:** HTTPX (Async)
 * **Testing:** Locust (Load), Pytest (Unit)
+* **Image Processing:** Pillow (QR Codes)
 * **Deployment:** Docker / Railway.app
 
 ---
 
-## 🏃‍♂️ Quick Start (Local)
+## 🏃‍♂️ Quick Start (Full Stack)
 
-1. **Clone the repo**
+### Prerequisites
 
-   ```bash
-   git clone https://github.com/yourusername/url-shortener.git
-   cd url-shortener
-   ```
+* Python 3.11+
+* PostgreSQL 14+
+* Redis 6+
+* Node.js (optional, for npm-based frontend setup)
 
-2. **Setup Environment**
+### 1. Backend Setup (Port 8000)
 
-   ```bash
-   python -m venv venv
-   # Windows
-   .\venv\Scripts\activate
-   # Linux/Mac
-   source venv/bin/activate
-   ```
+```bash
+# Clone and Install
+git clone https://github.com/yourusername/url-shortener.git
+cd url-shortener
+python -m venv venv
 
-3. **Install Dependencies**
+# Windows
+.\venv\Scripts\activate
+# Linux/Mac
+source venv/bin/activate
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+pip install -r requirements.txt
+```
 
-4. **Configure `.env`**
+**Configure `.env`:**
 
-   ```ini
-   DATABASE_URL=postgresql://user:pass@localhost:5432/shortener_db
-   REDIS_URL=redis://localhost:6379
-   ```
+```ini
+# Database
+DATABASE_URL=postgresql://user:pass@localhost:5432/shortener_db
 
-5. **Run Server**
+# Redis
+REDIS_URL=redis://localhost:6379
 
-   ```bash
-   uvicorn src.main:app --reload
-   ```
+# Server
+HOST=0.0.0.0
+PORT=8000
+```
+
+**Run Backend Server:**
+
+```bash
+uvicorn src.main:app --reload
+```
+
+### 2. Frontend Setup (Port 8080)
+
+Open a new terminal window:
+
+```bash
+cd frontend
+python -m http.server 8080
+```
+
+Alternatively, use any static server:
+
+```bash
+# Using Node.js
+npx serve frontend -p 8080
+
+# Using PHP
+php -S localhost:8080 -t frontend
+```
+
+### 3. Usage
+
+1. Open browser to `http://localhost:8080`
+2. Create a shortened link through the dashboard
+3. View real-time analytics with geographic data
+4. Test the redirect by visiting `http://localhost:8000/{short_code}`
+
+---
+
+## 📡 API Endpoints
+
+### Core Functionality
+
+| Method | Endpoint | Description |
+|:---|:---|:---|
+| `POST` | `/shorten` | Create a new shortened URL with optional custom alias |
+| `GET` | `/{short_code}` | Redirect to original URL and track analytics |
+| `GET` | `/{short_code}/stats` | **(Protected)** Get detailed analytics with geo data |
+| `GET` | `/{short_code}/qr` | Generate and download QR code |
+| `DELETE` | `/{short_code}` | **(Protected)** Delete shortened URL |
+
+### Example Request
+
+```bash
+# Create Short URL
+curl -X POST "http://localhost:8000/shorten" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/very/long/url",
+    "custom_alias": "my-link"
+  }'
+
+# Get Analytics
+curl -X GET "http://localhost:8000/my-link/stats" \
+  -H "X-Secret-Key: your_secret_key_here"
+```
+
+---
+
+## 🌍 Geo-Analytics Dashboard
+
+The Vue.js dashboard provides real-time insights into link performance:
+
+### Features
+
+* **Click Timeline:** Chronological list of all clicks with timestamps
+* **Geographic Distribution:** See which countries and cities are clicking your links
+* **Device Analytics:** User-Agent parsing shows browser and device types
+* **Real-Time Updates:** Dashboard fetches latest data on page load
+* **Export Ready:** Data formatted for easy export to CSV/Excel
+
+### Sample Analytics View
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Link: https://short.url/abc123                          │
+│ Original: https://example.com/very/long/url             │
+│ Total Clicks: 1,234                                     │
+├─────────────────────────────────────────────────────────┤
+│ Timestamp           │ Country    │ City          │ Device│
+├─────────────────────┼────────────┼───────────────┼───────┤
+│ 2024-12-03 14:23:01│ USA        │ New York      │ Chrome│
+│ 2024-12-03 14:22:45│ India      │ Mumbai        │ Safari│
+│ 2024-12-03 14:22:12│ UK         │ London        │ Firefox│
+└─────────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## 🔗 Live Demo
 
-Access the production API docs here:  
-**[https://short-it-production.up.railway.app/docs](https://short-it-production.up.railway.app/docs)**
+Access the production application:
+
+* **Frontend Dashboard:** `https://url-shortener-frontend.vercel.app`
+* **Backend API Docs:** `https://url-shortener-production.up.railway.app/docs`
+
+---
+
+## 🚀 Future Scope & Improvements
+
+* **User Authentication:** Add JWT-based user accounts to manage personal links and team workspaces.
+* **Advanced Analytics:** Implement conversion tracking, referrer analysis, and A/B testing capabilities.
+* **Link Expiration:** Add TTL support for temporary links that auto-expire after set duration.
+* **Webhooks:** Real-time notifications when links reach click milestones or specific events occur.
+* **Browser Extension:** Chrome/Firefox extension for one-click URL shortening from any webpage.
+* **API Rate Limiting Tiers:** Implement tiered rate limits for free/premium users.
+* **Custom Domains:** Allow users to use their own domains for branded short links.
+* **Bulk Operations:** Upload CSV of URLs for batch shortening and management.

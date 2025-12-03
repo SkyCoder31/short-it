@@ -10,12 +10,27 @@ from src.services import analytics
 from fastapi.responses import StreamingResponse
 import redis
 from src.config import get_settings
+from fastapi.middleware.cors import CORSMiddleware
 
 settings = get_settings()
 models.Base.metadata.create_all(bind=engine)
 redis_client = redis.Redis.from_url(settings.redis_url, decode_responses=True)
 
 app = FastAPI(title="URL Shortener API")
+
+origins = [
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    # "https://your-frontend-domain.com" # (For production later)
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def read_root():

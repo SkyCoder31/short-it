@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ShortIt - Analytics Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+
+    <div id="app" class="max-w-4xl mx-auto">
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-blue-600 tracking-tight">ShortIt</h1>
+            <p class="text-gray-500 mt-2">Just Not Another URL Shortener with Geo-Analytics</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <div class="bg-white p-6 rounded-lg shadow-md h-fit">
+                <h2 class="text-xl font-bold mb-4 text-gray-700">🔗 New Short Link</h2>
+                
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Target URL</label>
+                    <input v-model="longUrl" type="url" placeholder="https://..." 
+                           class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Custom Alias</label>
+                    <input v-model="customKey" type="text" placeholder="e.g. my-promo" 
+                           class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <button @click="shortenUrl" :disabled="loading"
+                        class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center">
+                    <span v-if="!loading">Create Link</span>
+                    <svg v-else class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+
+                <div v-if="loading" class="mt-4 text-center">
+                    <p class="text-blue-500 text-sm font-semibold animate-pulse">Generating your link...</p>
+                </div>
+
+                <div v-if="shortUrl && !loading" class="mt-6 p-4 bg-green-50 border border-green-200 rounded animate-fade-in">
+                    <p class="text-green-800 font-bold text-sm">Link Created!</p>
+                    <a :href="shortUrl" target="_blank" class="block mt-1 text-blue-600 underline font-mono text-lg break-all">{{ shortUrl }}</a>
+                    
+                    <div class="mt-4 text-center">
+                        <img :src="qrCodeUrl" class="w-24 h-24 mx-auto border p-1 bg-white">
+                        <p class="text-xs text-gray-400 mt-2">Scan me</p>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-green-200">
+                        <p class="text-xs font-bold text-gray-500 uppercase">Secret Admin Key</p>
+                        <div class="flex items-center mt-1">
+                            <code class="bg-white px-2 py-1 rounded border text-sm flex-1">{{ adminKey }}</code>
+                            <button @click="loadStats(adminKey)" class="ml-2 text-xs text-blue-600 underline">View Stats</button>
+                        </div>
+                    </div>
+                </div>
+                <p v-if="error" class="text-red-500 text-sm mt-3">{{ error }}</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md min-h-[400px]">
+                <h2 class="text-xl font-bold mb-4 text-gray-700">📊 Analytics Lookup</h2>
+                
+                <div class="flex gap-2 mb-6">
+                    <input v-model="lookupKey" type="text" placeholder="Enter Secret Key..." 
+                           class="flex-1 border rounded p-2 text-sm outline-none focus:ring-2 focus:ring-purple-500">
+                    <button @click="loadStats(lookupKey)" class="bg-purple-600 text-white px-4 py-2 rounded font-bold text-sm hover:bg-purple-700">
+                        Load
+                    </button>
+                </div>
+
+                <div v-if="stats" class="animate-fade-in">
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-blue-50 p-3 rounded text-center">
+                            <p class="text-xs text-gray-500 uppercase">Total Clicks</p>
+                            <p class="text-2xl font-bold text-blue-600">{{ stats.clicks }}</p>
+                        </div>
+                        <div class="bg-green-50 p-3 rounded text-center">
+                            <p class="text-xs text-gray-500 uppercase">Status</p>
+                            <p class="text-lg font-bold text-green-600">{{ stats.is_active ? 'Active' : 'Disabled' }}</p>
+                        </div>
+                    </div>
+
+                    <h3 class="font-bold text-sm text-gray-700 mb-2 border-b pb-1">Recent Locations</h3>
+                    <div class="overflow-y-auto max-h-64">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-gray-500 bg-gray-50 uppercase sticky top-0">
+                                <tr>
+                                    <th class="px-2 py-2">Time</th>
+                                    <th class="px-2 py-2">Country</th>
+                                    <th class="px-2 py-2">City</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="click in stats.click_events" :key="click.timestamp" class="border-b last:border-0 hover:bg-gray-50">
+                                    <td class="px-2 py-2 text-gray-500 text-xs">{{ new Date(click.timestamp).toLocaleTimeString() }}</td>
+                                    <td class="px-2 py-2 font-medium">{{ click.country }}</td>
+                                    <td class="px-2 py-2 text-gray-600">{{ click.city }}</td>
+                                </tr>
+                                <tr v-if="stats.click_events.length === 0">
+                                    <td colspan="3" class="text-center py-4 text-gray-400 italic">No clicks yet...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div v-if="!stats && !statsError" class="text-center text-gray-400 mt-20">
+                    <p>Enter a secret key to view live data.</p>
+                </div>
+                <p v-if="statsError" class="text-red-500 text-sm mt-4">{{ statsError }}</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp } = Vue
+        const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+                ? "http://127.0.0.1:8000"
+                : "https://short-it-production.up.railway.app/";
+
+        createApp({
+            data() {
+                return {
+                    longUrl: '', customKey: '', shortUrl: '', adminKey: '', qrCodeUrl: '', error: '',
+                    lookupKey: '', stats: null, statsError: '',
+                    loading: false
+                }
+            },
+            methods: {
+                async shortenUrl() {
+                    this.error = ''; this.shortUrl = '';
+                    if (!this.longUrl) { this.error = "URL required"; return; }
+                    
+                    this.loading = true;
+
+                    try {
+                        await new Promise(r => setTimeout(r, 400)); 
+
+                        const res = await fetch(`${API_BASE}/url`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ target_url: this.longUrl, custom_key: this.customKey || null })
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.detail);
+
+                        this.shortUrl = data.url;
+                        this.adminKey = data.admin_url.split('/').pop();
+                        this.qrCodeUrl = `${API_BASE}/${data.key}/qr`; // Uses the new 'key' field
+                    } catch (e) { 
+                        this.error = e.message; 
+                    } finally {
+                        this.loading = false; // <--- STOP LOADING
+                    }
+                },
+                async loadStats(key) {
+                    if(!key) return;
+                    this.statsError = ''; this.stats = null;
+                    this.lookupKey = key;
+                    
+                    try {
+                        const res = await fetch(`${API_BASE}/admin/${key}`);
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.detail);
+                        
+                        data.click_events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        this.stats = data;
+                    } catch (e) { this.statsError = "Could not load stats: " + e.message; }
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>

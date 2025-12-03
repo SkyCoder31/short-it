@@ -27,6 +27,10 @@ class Click(Base):
     client_ip = Column(String, default="Unknown")
     user_agent = Column(String, default="Unknown")
 
+    # Geo-location info
+    country = Column(String, default="Unknown")
+    city = Column(String, default="Unknown")
+
     # Foreign Key: Links this click to a specific URL
     url_key = Column(String, ForeignKey("urls.key"))
     
