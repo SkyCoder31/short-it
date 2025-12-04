@@ -1,4 +1,5 @@
-from locust import HttpUser, constant, task, between
+from locust import HttpUser, constant, task
+
 
 class WebsiteUser(HttpUser):
     # Waiting between 1 and 2 seconds between tasks

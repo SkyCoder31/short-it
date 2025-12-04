@@ -1,6 +1,8 @@
-from sqlalchemy.orm import Session
-from src import models
 import httpx
+from sqlalchemy.orm import Session
+
+from src import models
+
 
 def record_click_stats(url_key: str, ip: str, user_agent: str, db: Session):
     """
@@ -21,21 +23,21 @@ def record_click_stats(url_key: str, ip: str, user_agent: str, db: Session):
 
     try:
         db_url = db.query(models.URL).filter(models.URL.key == url_key).first()
-        
+
         if db_url:
-            db_url.clicks += 1 # type: ignore
-            
+            db_url.clicks += 1  # type: ignore
+
             click_entry = models.Click(
                 url_key=url_key,
                 client_ip=ip,
                 user_agent=user_agent,
                 country=country,
-                city=city
+                city=city,
             )
-            
+
             db.add(click_entry)
             db.commit()
-            
+
     except Exception as e:
         print(f"Failed to log click: {e}")
     finally:

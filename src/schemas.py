@@ -1,15 +1,18 @@
 from datetime import datetime
-from pydantic import BaseModel
-from pydantic import HttpUrl
-from typing import Optional,List
+from typing import List, Optional
+
+from pydantic import BaseModel, HttpUrl, ConfigDict
+
 
 # Incoming data from the user
 class URLBase(BaseModel):
     target_url: HttpUrl
     custom_key: Optional[str] = None
 
+
 class URLCreate(URLBase):
     pass
+
 
 class ClickInfo(BaseModel):
     timestamp: datetime
@@ -17,8 +20,8 @@ class ClickInfo(BaseModel):
     city: str
     client_ip: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
 # Outgoing data to the user
 class URLInfo(URLBase):
     key: str
@@ -28,5 +31,4 @@ class URLInfo(URLBase):
     admin_url: HttpUrl
     click_events: List[ClickInfo] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

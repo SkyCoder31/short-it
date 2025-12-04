@@ -6,3 +6,5 @@ pydantic-settings
 redis
 qrcode[pil]
 httpx
+ruff
+pytest
