@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from io import BytesIO
 
 import qrcode
@@ -7,11 +8,12 @@ from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy.orm import Session
-from contextlib import asynccontextmanager
+
 from src import keygen, models, schemas
 from src.config import get_settings
 from src.database import SessionLocal, engine, get_db
 from src.services import analytics
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
