@@ -1,12 +1,13 @@
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, StaticPool
-from sqlalchemy.orm import sessionmaker
 from unittest.mock import MagicMock
+
 import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import StaticPool, create_engine
+from sqlalchemy.orm import sessionmaker
+
+from src import database, main
+from src.database import get_db
 from src.main import app
-from src.database import Base, get_db
-from src import database 
-from src import main
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
