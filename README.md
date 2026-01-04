@@ -12,7 +12,7 @@ A production-grade, scalable URL shortener featuring a **Decoupled Full-Stack Ar
 
 ---
 
-## 🏗️ System Architecture (v2.0)
+## System Architecture
 
 The system uses a **Decoupled Architecture**, separating the UI from the API to allow independent scaling and deployment.
 
@@ -100,7 +100,7 @@ We benchmarked the system using **Locust** to simulate high-concurrency traffic 
 * **Rate Limiting:** Token-bucket algorithm prevents API abuse with configurable limits.
 * **Async Processing:** All I/O operations use async/await for maximum throughput.
 
-### 4. 📦 Full-Stack Extras
+### 4. 📦 Few More Extras
 
 * **QR Codes:** Instant on-the-fly QR generation for every shortened link using Pillow.
 * **CORS Security:** Configured to allow secure cross-origin requests between Frontend and Backend.
@@ -132,7 +132,7 @@ We benchmarked the system using **Locust** to simulate high-concurrency traffic 
 
 ---
 
-## 🏃‍♂️ Quick Start (Full Stack)
+## Quick Start
 
 ### Prerequisites
 
@@ -205,7 +205,7 @@ php -S localhost:8080 -t frontend
 
 ---
 
-## 📡 API Endpoints
+## API Endpoints
 
 ### Core Functionality
 
